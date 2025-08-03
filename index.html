@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Architecture of Becoming: An Interactive Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Softened Teal & Ochre (based on user-provided image) -->
+    <!-- Application Structure Plan: The application is structured into three main, navigable sections: 1. **Explorer Dashboard**: A central hub for filtering and comparing all models in an interactive table format, complemented by a dynamic chart visualizing the distribution of models across disciplines. This design allows for high-level comparison and quick access to details. 2. **Thematic Deep Dives**: A section dedicated to the report's analytical content, presenting the "Nature of Transformation" and "Universal Patterns" in a clear, narrative format with interactive diagrams. This separates analysis from raw data, aiding comprehension. 3. **The Meridian Map**: A dedicated section to visualize and explain the proposed integrated framework, using a structured layout to clearly present its phases and principles. This structure was chosen to guide the user from broad exploration to deep analysis and finally to a practical, synthesized application, mirroring a logical learning journey. -->
+    <!-- Visualization & Content Choices: 
+        - **Model Database (Explorer Dashboard)**: Report Info -> Summary Table. Goal -> Compare, Filter, Explore. Viz -> Interactive HTML table with JS filtering/searching. Interaction -> Dropdown filters for Discipline/Tradition and text search. Justification -> Allows users to quickly find and compare relevant models based on their specific needs, far more dynamic than a static table.
+        - **Discipline Distribution (Explorer Dashboard)**: Report Info -> Model Disciplines. Goal -> Show composition of the dataset. Viz -> Doughnut Chart (Chart.js). Interaction -> Hover for tooltips. Justification -> Provides an immediate visual summary of the intellectual landscape covered in the report.
+        - **Universal Patterns (Thematic Deep Dives)**: Report Info -> Section 6 Analysis. Goal -> Explain the archetypal 3-act structure. Viz -> Structured HTML/CSS diagram. Interaction -> Hover effects to highlight stages. Justification -> A visual, non-chart representation makes this abstract concept more concrete and easier to follow than plain text.
+        - **The Meridian Map (Meridian Map Section)**: Report Info -> Section 9 Framework. Goal -> Clearly present the proposed integrated model. Viz -> HTML/CSS grid layout. Interaction -> None needed, clarity is key. Justification -> A clean, structured layout is the most effective way to present this new, multi-part framework without distraction.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FEFDFB;
+            color: #383838;
+        }
+        .nav-link {
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #6eb5b0;
+            border-bottom-color: #6eb5b0;
+        }
+        .card {
+            background-color: #FFFFFF;
+            border: 1px solid #F0ECE8;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .tag {
+            background-color: #EAE4E9;
+            color: #8C6D8A;
+        }
+        .search-input {
+            border: 1px solid #F0ECE8;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #6eb5b0;
+            box-shadow: 0 0 0 2px rgba(110, 181, 176, 0.2);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .pattern-card {
+            border-left: 4px solid #6eb5b0;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-[#6eb5b0] mb-2">The Architecture of Becoming</h1>
+            <p class="text-lg text-gray-600">An Interactive Explorer of Transformation Models</p>
+        </header>
+
+        <nav class="flex justify-center border-b border-gray-200 mb-12">
+            <a href="#explorer" class="nav-link active py-4 px-6 text-lg font-medium" data-section="explorer">Explorer</a>
+            <a href="#themes" class="nav-link py-4 px-6 text-lg font-medium" data-section="themes">Thematic Deep Dives</a>
+            <a href="#map" class="nav-link py-4 px-6 text-lg font-medium" data-section="map">The Meridian Map</a>
+        </nav>
+
+        <main>
+            <section id="explorer" class="space-y-12">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold mb-2">Models Explorer Dashboard</h2>
+                    <p class="max-w-3xl mx-auto text-gray-600">
+                        This section provides a comprehensive, filterable database of all transformation models from the report. Use the filters to narrow your search by discipline or keyword, and click on any model to see its detailed description. The chart visualizes the diverse origins of these frameworks.
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                    <div class="lg:col-span-1 space-y-6 p-6 card rounded-lg">
+                        <div>
+                            <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search Models</label>
+                            <input type="text" id="search" class="w-full p-2 rounded-md search-input" placeholder="e.g., Hero's Journey, Kotter">
+                        </div>
+                        <div>
+                            <label for="discipline-filter" class="block text-sm font-medium text-gray-700 mb-1">Filter by Discipline/Tradition</label>
+                            <select id="discipline-filter" class="w-full p-2 rounded-md search-input">
+                                <option value="all">All Disciplines</option>
+                            </select>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="disciplineChart"></canvas>
+                        </div>
+                    </div>
+                    <div id="model-list" class="lg:col-span-2 space-y-4">
+                    </div>
+                </div>
+                <div id="model-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4">
+                    <div class="bg-white rounded-lg shadow-xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        <div id="modal-content"></div>
+                        <button id="close-modal" class="mt-6 bg-[#6eb5b0] text-white py-2 px-4 rounded-md hover:bg-opacity-90">Close</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="themes" class="hidden space-y-12">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold mb-2">Thematic Deep Dives</h2>
+                    <p class="max-w-3xl mx-auto text-gray-600">
+                        Explore the core analytical insights from the report. This section synthesizes the common patterns and divergent philosophies found across the diverse range of models, providing a deeper understanding of what transformation is and how it occurs.
+                    </p>
+                </div>
+
+                <div class="card rounded-lg p-8">
+                    <h3 class="text-2xl font-bold mb-4">The Nature of Transformation: A Cross-Paradigm Analysis</h3>
+                    <p class="mb-6 text-gray-600">"Transformation" is not a single concept. The surveyed models view it through at least six distinct lenses, each offering a unique perspective on the process of change. Understanding these paradigms is key to selecting the right approach for a given context.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="p-4 bg-gray-50 rounded-lg"><strong>1. As Problem-Solving:</strong> A linear, managed process to move from a current to a desired state (e.g., Lewin, Kotter).</div>
+                        <div class="p-4 bg-gray-50 rounded-lg"><strong>2. As Psychological Adaptation:</strong> An internal, emotional journey of letting go and reorienting (e.g., Bridges, Satir).</div>
+                        <div class="p-4 bg-gray-50 rounded-lg"><strong>3. As Developmental Unfolding:</strong> A natural progression through stages of consciousness or maturity (e.g., Wilber, Ashramas).</div>
+                        <div class="p-4 bg-gray-50 rounded-lg"><strong>4. As an Archetypal Journey:</strong> A narrative cycle of departure, trial, and return with new wisdom (e.g., Campbell).</div>
+                        <div class="p-4 bg-gray-50 rounded-lg"><strong>5. As a Return to Wholeness:</strong> Restoring an original state of balance and right relationship (e.g., Medicine Wheel, Ubuntu).</div>
+                        <div class="p-4 bg-gray-50 rounded-lg"><strong>6. As Liberation:</strong> The ultimate release from suffering and the limited ego (e.g., Buddhism, Yoga).</div>
+                    </div>
+                </div>
+
+                <div class="card rounded-lg p-8">
+                    <h3 class="text-2xl font-bold mb-4">Universal Patterns: The 3-Act Structure of Change</h3>
+                    <p class="mb-6 text-gray-600">Despite their differences, a universal, three-act structure of transformation emerges across models from mythology, organizational change, and psychology. This suggests a deep, archetypal grammar for how humans experience and process fundamental change.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                        <div class="pattern-card p-6 bg-white rounded-lg">
+                            <div class="text-5xl mb-4">1</div>
+                            <h4 class="text-xl font-semibold mb-2">Separation & Ending</h4>
+                            <p class="text-gray-600">A disruption to the status quo. A call to adventure. The "Unfreezing" of old patterns. It begins with an ending.</p>
+                        </div>
+                        <div class="pattern-card p-6 bg-white rounded-lg">
+                            <div class="text-5xl mb-4">2</div>
+                            <h4 class="text-xl font-semibold mb-2">The Liminal Space</h4>
+                            <p class="text-gray-600">The "in-between" state. The Neutral Zone. Chaos. The Road of Trials. This is the crucible where the real change happens.</p>
+                        </div>
+                        <div class="pattern-card p-6 bg-white rounded-lg">
+                            <div class="text-5xl mb-4">3</div>
+                            <h4 class="text-xl font-semibold mb-2">Integration & Return</h4>
+                            <p class="text-gray-600">A new beginning. The "Refreezing" of new patterns. Incorporation into a new identity. Returning with the boon.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="map" class="hidden space-y-12">
+                 <div class="text-center">
+                    <h2 class="text-3xl font-bold mb-2">The Meridian Map: An Integrated Framework</h2>
+                    <p class="max-w-3xl mx-auto text-gray-600">
+                        The Meridian Map is a new, integrated framework synthesized from the report's analysis. It provides a practical, multi-layered guide for practitioners, honoring the complexity of change by integrating systemic, psychological, and continuous cultivation perspectives.
+                    </p>
+                </div>
+                <div class="card rounded-lg p-8">
+                    <h3 class="text-2xl font-bold text-center mb-6">Foundational Principles</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 text-center">
+                        <div class="p-4"><strong>Duality:</strong> Manage external Change & internal Transition.</div>
+                        <div class="p-4"><strong>Liminality:</strong> Honor the "in-between" as the crucible of change.</div>
+                        <div class="p-4"><strong>Holism:</strong> Address the whole system (mind, body, spirit, organization).</div>
+                        <div class="p-4"><strong>Rhythm:</strong> Balance linear Projects with cyclical Practice.</div>
+                        <div class="p-4"><strong>Paradox:</strong> Navigate between proactive Agency & trusting Surrender.</div>
+                    </div>
+                </div>
+                <div class="space-y-8">
+                    <div class="card rounded-lg p-8">
+                        <h3 class="text-2xl font-bold mb-4">Phase 1: Unearthing (Separation / Unfreezing)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h4 class="font-semibold text-lg mb-2 text-[#e9a939]">Systemic / Organizational Track</h4>
+                                <ul class="list-disc list-inside text-gray-600 space-y-1">
+                                    <li>Create Urgency & Define "Why"</li>
+                                    <li>Build Guiding Coalition</li>
+                                    <li>Define the Case for Change</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-lg mb-2 text-[#e9a939]">Individual / Psychological Track</h4>
+                                <ul class="list-disc list-inside text-gray-600 space-y-1">
+                                    <li>Acknowledge Loss & Honor the Past</li>
+                                    <li>Manage Resistance & Grief</li>
+                                    <li>Foster Awareness & Desire (ADKAR)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card rounded-lg p-8">
+                        <h3 class="text-2xl font-bold mb-4">Phase 2: Navigating the Flux (Liminality / Change)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h4 class="font-semibold text-lg mb-2 text-[#e9a939]">Systemic / Organizational Track</h4>
+                                <ul class="list-disc list-inside text-gray-600 space-y-1">
+                                    <li>Co-create the Vision</li>
+                                    <li>Remove Barriers & Foster Experimentation</li>
+                                    <li>Generate Short-Term Wins</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-lg mb-2 text-[#e9a939]">Individual / Psychological Track</h4>
+                                <ul class="list-disc list-inside text-gray-600 space-y-1">
+                                    <li>Provide Psychological Safety</li>
+                                    <li>Build Knowledge & Ability (ADKAR)</li>
+                                    <li>Cultivate Resilience & Find Meaning</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card rounded-lg p-8">
+                        <h3 class="text-2xl font-bold mb-4">Phase 3: Integrating (Incorporation / Refreezing)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h4 class="font-semibold text-lg mb-2 text-[#e9a939]">Systemic / Organizational Track</h4>
+                                <ul class="list-disc list-inside text-gray-600 space-y-1">
+                                    <li>Anchor Change in Culture</li>
+                                    <li>Align Systems (Rewards, Structure)</li>
+                                    <li>Celebrate Success</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-lg mb-2 text-[#e9a939]">Individual / Psychological Track</h4>
+                                <ul class="list-disc list-inside text-gray-600 space-y-1">
+                                    <li>Reinforce New Behaviors (ADKAR)</li>
+                                    <li>Establish New Identities</li>
+                                    <li>Share the Wisdom Gained</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card rounded-lg p-8 mt-8 border-t-4 border-[#6eb5b0]">
+                    <h3 class="text-2xl font-bold text-center mb-4">The Continuous Dimension: Cultivation & Balance</h3>
+                    <p class="text-center text-gray-600 mb-6">Informing all phases is a continuous, cyclical practice of maintaining the health and adaptive capacity of the system.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                        <div>
+                            <h4 class="font-semibold text-lg mb-2">Practices of Cultivation</h4>
+                            <p class="text-gray-600">Develop individual and collective character (e.g., Anishinaabe 7 Grandfather Teachings).</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-lg mb-2">Practices of Relationality</h4>
+                            <p class="text-gray-600">Foster community and mutual support, recognizing shared humanity (e.g., Ubuntu).</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-lg mb-2">Practices of Balance & Flow</h4>
+                            <p class="text-gray-600">Cultivate holistic balance and graceful adaptation (e.g., Medicine Wheel, Taoism).</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modelsData = [
+                { name: "Kurt Lewin's 3-Stage Model", discipline: "Organizational Change", creator: "Kurt Lewin", concept: "A three-step process for behavior change that involves preparing for change, implementing it, and solidifying the new state.", stages: "1. Unfreeze; 2. Change; 3. Refreeze", definition: "A managed process of moving from a current state to a desired future state by overcoming forces of resistance.", mechanism: "Deconstructing old patterns, implementing new ones, and reinforcing them until they become the new norm.", application: "Organization", analogy: "Melting and reshaping an ice cube." },
+                { name: "John Kotter's 8-Step Process", discipline: "Organizational Change", creator: "John P. Kotter", concept: "A top-down, leadership-driven process for creating and sustaining large-scale organizational change by building momentum.", stages: "1. Create Urgency; 2. Build Coalition; 3. Form Vision; 4. Enlist Army; 5. Remove Barriers; 6. Generate Wins; 7. Sustain Acceleration; 8. Institute Change.", definition: "A strategically managed, sequential process of mobilizing an organization to achieve a specific, envisioned future state.", mechanism: "Creating a climate for change, engaging the organization through communication and empowerment, and implementing and sustaining the change.", application: "Organization", analogy: "A military-style campaign or a movement." },
+                { name: "Virginia Satir's Change Model", discipline: "Family & Systemic Therapy", creator: "Virginia Satir", concept: "A model describing the emotional and performance-based stages individuals and systems go through during change, emphasizing the human element.", stages: "1. Late Status Quo; 2. Resistance; 3. Chaos; 4. Integration; 5. New Status Quo.", definition: "An emotional and psychological journey through disruption and uncertainty toward a new level of stability and performance.", mechanism: "Navigating the emotional upheaval of change by acknowledging feelings, managing chaos, and supporting integration.", application: "Individual, Group, Organization", analogy: "Iceberg (visible behavior vs. hidden feelings); Mobile (interconnected family system)." },
+                { name: "William Bridges' Transition Model", discipline: "Organizational Change", creator: "William Bridges", concept: "Distinguishes external 'change' (the event) from internal 'transition' (the psychological process of adaptation).", stages: "1. Ending, Losing, and Letting Go; 2. The Neutral Zone; 3. The New Beginning.", definition: "An internal psychological reorientation process that individuals must go through to come to terms with a new situation.", mechanism: "Guiding individuals through the psychological stages of letting go of the past, navigating the uncertain present, and embracing the future.", application: "Individual, Group", analogy: "A psychological journey or pilgrimage." },
+                { name: "Kübler-Ross Change Curve", discipline: "Psychiatry, Grief Counseling", creator: "Elisabeth Kübler-Ross", concept: "An adaptation of the five stages of grief to understand and manage emotional responses to organizational change.", stages: "1. Denial; 2. Anger; 3. Bargaining; 4. Depression; 5. Acceptance.", definition: "An emotional process of coming to terms with a significant, often unwelcome, change.", mechanism: "Providing empathy and targeted support to individuals based on their emotional stage to facilitate acceptance.", application: "Individual", analogy: "The process of grieving a loss." },
+                { name: "Prosci's ADKAR Model", discipline: "Organizational Change", creator: "Jeffrey Hiatt", concept: "A bottom-up, goal-oriented model focusing on the five outcomes an individual must achieve for a change to be successful.", stages: "1. Awareness; 2. Desire; 3. Knowledge; 4. Ability; 5. Reinforcement.", definition: "The successful progression of an individual through five sequential milestones, from understanding the need for change to sustaining it.", mechanism: "Diagnosing and addressing the specific barrier points for each individual to facilitate their personal transition.", application: "Individual", analogy: "A personal change management checklist." },
+                { name: "McKinsey 7-S Model", discipline: "Strategic Management", creator: "McKinsey & Company", concept: "A diagnostic tool for organizational alignment, positing that seven internal elements must be in harmony for an organization to be effective.", stages: "Strategy, Structure, Systems, Shared Values, Skills, Style, Staff.", definition: "A process of realigning interconnected organizational elements to achieve a more effective design.", mechanism: "Identifying misalignments between the seven elements and making coordinated adjustments to restore harmony.", application: "Organization", analogy: "A web or system of interconnected parts." },
+                { name: "Systems & Complexity Theory", discipline: "Transdisciplinary Science", creator: "Various (von Bertalanffy, etc.)", concept: "A meta-framework viewing entities as complex, interconnected systems where change is emergent and often non-linear.", stages: "Interdependence, Emergence, Self-Organization, Feedback Loops, Edge of Chaos.", definition: "An emergent, adaptive process of self-organization in response to internal and external pressures.", mechanism: "Understanding and influencing the patterns of interaction between a system's components rather than managing the components themselves.", application: "Organization, Societal", analogy: "A living organism or ecosystem." },
+                { name: "Transtheoretical Model", discipline: "Psychology", creator: "James Prochaska & Carlo DiClemente", concept: "A model of intentional behavior change that unfolds through a series of gradual stages, acknowledging relapse as part of the process.", stages: "1. Precontemplation; 2. Contemplation; 3. Preparation; 4. Action; 5. Maintenance; 6. Relapse.", definition: "A gradual, cyclical process of behavior modification based on an individual's readiness to change.", mechanism: "Applying stage-specific strategies to help an individual progress toward sustained behavior change.", application: "Individual", analogy: "Climbing a spiral staircase, not a linear ladder." },
+                { name: "Spiritual Emergency", discipline: "Transpersonal Psychology", creator: "Stanislav & Christina Grof", concept: "Reframes intense psychological crises as potentially positive 'evolutionary crises' or natural developmental processes.", stages: "Crisis, Breakdown, Breakthrough, Integration.", definition: "A potentially transformative breakdown of one's old identity and worldview, leading to a higher state of consciousness if supported properly.", mechanism: "Providing a supportive environment to allow the natural, healing process of a transpersonal crisis to unfold toward integration.", application: "Individual", analogy: "A difficult spiritual rebirth or rite of passage." },
+                { name: "Integral Theory (AQAL)", discipline: "Integral Philosophy", creator: "Ken Wilber", concept: "A 'theory of everything' that integrates all human knowledge and experience into a five-element map.", stages: "Quadrants, Levels, Lines, States, Types.", definition: "The evolutionary unfolding of consciousness through pre-personal, personal, and transpersonal stages of development.", mechanism: "Understanding a situation from all perspectives (quadrants) and across all developmental dimensions to foster holistic growth.", application: "Individual, Societal", analogy: "A comprehensive map of reality." },
+                { name: "The Hero's Journey (Monomyth)", discipline: "Mythology, Anthropology", creator: "Joseph Campbell", concept: "An archetypal narrative pattern of transformation found in myths worldwide.", stages: "1. Departure; 2. Initiation; 3. Return.", definition: "A cyclical journey of leaving the known world, facing trials in an unknown world, and returning with a boon or new wisdom.", mechanism: "Following an archetypal psychological map for navigating significant life changes and integrating the lessons learned.", application: "Individual", analogy: "A mythic adventure or quest." },
+                { name: "Rites of Passage", discipline: "Anthropology", creator: "Arnold van Gennep", concept: "A three-phase ritual structure that facilitates a change in an individual's social status or life stage.", stages: "1. Separation; 2. Liminality (Transition); 3. Incorporation.", definition: "A socially-scaffolded process of dissolving an old identity and forming a new one within a community context.", mechanism: "Moving an individual through a structured, ritualized process that marks and enables a fundamental change in their social being.", application: "Individual, Group", analogy: "Changing rooms in a house." },
+                { name: "Buddhist Enlightenment", discipline: "Buddhism", creator: "Siddhartha Gautama (The Buddha)", concept: "A path of mental and ethical purification to abandon the 'fetters' that cause suffering and realize the true nature of reality.", stages: "1. Stream-enterer; 2. Once-returner; 3. Non-returner; 4. Arahant.", definition: "The progressive and ultimate liberation from suffering (Nirvana) through the eradication of ignorance, craving, and aversion.", mechanism: "Cultivating wisdom and compassion through practices like meditation and adherence to the Noble Eightfold Path.", application: "Spiritual", analogy: "Awakening from a dream." },
+                { name: "Hindu Ashramas", discipline: "Hinduism", creator: "Ancient Hindu Sages", concept: "A model of four sequential life stages, each with its own duties (dharma) and goals, leading toward spiritual liberation (moksha).", stages: "1. Brahmacharya (Student); 2. Grihastha (Householder); 3. Vanaprastha (Retiree); 4. Sannyasa (Renunciate).", definition: "A lifelong journey of personal and spiritual development, balancing worldly duties with the ultimate goal of self-realization.", mechanism: "Fulfilling the duties and pursuing the goals appropriate to each life stage to ensure balanced growth.", application: "Spiritual", analogy: "A journey through the four seasons of life." },
+                { name: "Taoist Philosophy of Change", discipline: "Taoism", creator: "Laozi, Zhuangzi", concept: "A philosophy of aligning oneself with the Tao (the natural, flowing way of the universe) through acceptance and non-resistance.", stages: "Flowing with the Tao, Letting Go, Wu Wei (Effortless Action).", definition: "A natural, continuous process of transformation that occurs by yielding to, rather than resisting, the flow of life.", mechanism: "Practicing acceptance, detachment, and effortless action to move in harmony with the universal process of change.", application: "Spiritual", analogy: "A river flowing to the sea; a leaf in the wind." },
+                { name: "Sufi Seven Valleys", discipline: "Sufism (Islam)", creator: "Farid al-Din Attar", concept: "A mystical map of the soul's seven-stage journey of awakening and annihilation in God.", stages: "1. Search; 2. Love; 3. Knowledge; 4. Unity; 5. Contentment; 6. Wonderment; 7. True Poverty & Nothingness (Fana).", definition: "The soul's progressive ascent through different states of consciousness, culminating in the dissolution of the ego into the Divine.", mechanism: "Traversing each 'valley' through spiritual practice, moving from seeking to loving, knowing, and ultimately uniting with God.", application: "Spiritual", analogy: "A journey through seven heavens or valleys." },
+                { name: "Anishinaabe 7 Grandfather Teachings", discipline: "Anishinaabe", creator: "Anishinaabe Elders", concept: "A set of seven core values that guide how to live a 'Good Life' in balance and right relationship.", stages: "Love, Respect, Bravery, Truth, Honesty, Humility, Wisdom.", definition: "A continuous practice of living in a way that embodies these seven virtues, leading to personal and communal well-being.", mechanism: "Applying the teachings interdependently in all actions and decisions to foster a life of character and harmony.", application: "Spiritual, Societal", analogy: "Living by a moral compass." },
+                { name: "Haudenosaunee Great Law of Peace", discipline: "Haudenosaunee", creator: "The Great Peacemaker", concept: "A political and social constitution for transforming conflict into a lasting, unified peace among nations.", stages: "Peace, Equity, Justice, Power of Good Minds, Consensus, Seventh Generation Principle.", definition: "A societal transformation from perpetual warfare to a stable, peaceful, and just confederacy.", mechanism: "Establishing a sophisticated governance structure based on consensus, checks and balances, and long-term thinking.", application: "Societal", analogy: "A great, sheltering tree with deep roots." },
+                { name: "First Nations Medicine Wheel", discipline: "Pan-Indigenous", creator: "Various Indigenous Elders", concept: "A holistic and cyclical model representing balance among the four directions, four seasons, and four aspects of being.", stages: "East (Vision), South (Relating), West (Reason), North (Movement/Action).", definition: "A continuous, cyclical process of healing and learning that maintains balance while embracing change.", mechanism: "Moving through the four directions to gain vision, relate to it, understand it, and finally enact it, ensuring holistic development.", application: "Spiritual, Individual", analogy: "A mirror for understanding the unseen; a compass for life." },
+                { name: "Lakota Inípi (Sweat Lodge)", discipline: "Lakota", creator: "Lakota Elders", concept: "A purification ceremony that facilitates a spiritual rebirth and renewal.", stages: "Purification through Earth, Water, Fire, and Air.", definition: "A profound purification of body, mind, and spirit, leading to a state of humility and spiritual rebirth ('to live again').", mechanism: "Undergoing an intense, ritualized physical and spiritual cleansing within a structure symbolizing the womb of the universe.", application: "Spiritual, Individual", analogy: "A spiritual rebirth from the womb of the universe." },
+                { name: "Inuit Qaujimajatuqangit (IQ)", discipline: "Inuit", creator: "Inuit Elders", concept: "A dynamic knowledge system for well-being based on four laws and eight guiding principles.", stages: "Working for common good; Respecting life; Maintaining harmony; Planning for the future.", definition: "A continuous, adaptive process of 'making a human being' who is capable, contributing, and grounded in cultural principles.", mechanism: "Living according to the core laws and principles, which fosters innovation, collaboration, and resilience.", application: "Societal, Spiritual", analogy: "Drawing back a bowstring to propel an arrow into the future." },
+                { name: "African Philosophy of Ubuntu", discipline: "Pan-African", creator: "Pan-African", concept: "A philosophy of interconnectedness and shared humanity.", stages: "'I am because we are'; Communalism, Compassion, Solidarity, Harmony.", definition: "The transformation of the self and community through the recognition of a shared, interdependent humanity.", mechanism: "Fostering community well-being through practices of empathy, generosity, consensus, and mutual responsibility.", application: "Societal, Spiritual", analogy: "An intricate, interconnected web of human relationships." }
+            ];
+
+            const modelList = document.getElementById('model-list');
+            const searchInput = document.getElementById('search');
+            const disciplineFilter = document.getElementById('discipline-filter');
+            const modal = document.getElementById('model-detail-modal');
+            const modalContent = document.getElementById('modal-content');
+            const closeModalBtn = document.getElementById('close-modal');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main > section');
+
+            function populateDisciplines() {
+                const disciplines = [...new Set(modelsData.map(model => model.discipline))];
+                disciplines.sort();
+                disciplines.forEach(discipline => {
+                    const option = document.createElement('option');
+                    option.value = discipline;
+                    option.textContent = discipline;
+                    disciplineFilter.appendChild(option);
+                });
+            }
+
+            function renderModels(filteredModels) {
+                modelList.innerHTML = '';
+                if (filteredModels.length === 0) {
+                    modelList.innerHTML = `<div class="text-center text-gray-500 p-8 card rounded-lg">No models found matching your criteria.</div>`;
+                    return;
+                }
+                filteredModels.forEach((model, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'card rounded-lg p-6 cursor-pointer hover:shadow-lg transition-shadow';
+                    card.dataset.index = modelsData.indexOf(model);
+                    card.innerHTML = `
+                        <h3 class="text-xl font-bold mb-2">${model.name}</h3>
+                        <p class="text-gray-500 mb-4">${model.creator}</p>
+                        <p class="mb-4">${model.concept}</p>
+                        <span class="tag text-sm font-medium py-1 px-3 rounded-full">${model.discipline}</span>
+                    `;
+                    card.addEventListener('click', () => showModal(model));
+                    modelList.appendChild(card);
+                });
+            }
+
+            function showModal(model) {
+                modalContent.innerHTML = `
+                    <h2 class="text-2xl font-bold mb-2">${model.name}</h2>
+                    <p class="text-gray-500 mb-4">By ${model.creator}</p>
+                    <div class="space-y-4">
+                        <p><strong>Analogy:</strong> <span class="italic">"${model.analogy}"</span></p>
+                        <p><strong>Core Concept:</strong> ${model.concept}</p>
+                        <p><strong>Key Stages/Principles:</strong> ${model.stages}</p>
+                        <p><strong>Definition of Transformation:</strong> ${model.definition}</p>
+                        <p><strong>Mechanism of Action:</strong> ${model.mechanism}</p>
+                        <div>
+                            <span class="tag text-sm font-medium py-1 px-3 rounded-full">${model.discipline}</span>
+                            <span class="tag text-sm font-medium py-1 px-3 rounded-full">${model.application}</span>
+                        </div>
+                    </div>
+                `;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            function filterAndRender() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedDiscipline = disciplineFilter.value;
+
+                const filteredModels = modelsData.filter(model => {
+                    const matchesSearch = model.name.toLowerCase().includes(searchTerm) || model.concept.toLowerCase().includes(searchTerm) || model.creator.toLowerCase().includes(searchTerm);
+                    const matchesDiscipline = selectedDiscipline === 'all' || model.discipline === selectedDiscipline;
+                    return matchesSearch && matchesDiscipline;
+                });
+                renderModels(filteredModels);
+            }
+            
+            function renderChart() {
+                const disciplineCounts = modelsData.reduce((acc, model) => {
+                    acc[model.discipline] = (acc[model.discipline] || 0) + 1;
+                    return acc;
+                }, {});
+
+                const labels = Object.keys(disciplineCounts);
+                const data = Object.values(disciplineCounts);
+
+                const ctx = document.getElementById('disciplineChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Models by Discipline',
+                            data: data,
+                            backgroundColor: [
+                                '#6eb5b0', '#e9a939', '#aa6ea1', '#a3d3cd', '#f4b642', 
+                                '#ba759a', '#d6b8af', '#2d8f8e', '#f5c518', '#8C6D8A',
+                                '#EAE4E9', '#383838'
+                            ],
+                            borderColor: '#FEFDFB',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        family: "'Inter', sans-serif"
+                                    },
+                                    boxWidth: 15,
+                                    padding: 15
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function switchSection(targetId) {
+                sections.forEach(section => {
+                    if (section.id === targetId) {
+                        section.classList.remove('hidden');
+                    } else {
+                        section.classList.add('hidden');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    if (link.dataset.section === targetId) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
+                 window.scrollTo(0, 0);
+            }
+            
+            searchInput.addEventListener('input', filterAndRender);
+            disciplineFilter.addEventListener('change', filterAndRender);
+            
+            closeModalBtn.addEventListener('click', () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            });
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    switchSection(link.dataset.section);
+                });
+            });
+
+            populateDisciplines();
+            renderModels(modelsData);
+            renderChart();
+        });
+    </script>
+</body>
+</html>
